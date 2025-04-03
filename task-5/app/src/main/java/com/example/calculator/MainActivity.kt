@@ -12,10 +12,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +31,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.calculator.ui.theme.CalculatorTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,8 +53,37 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+data class HistoryItem(
+    val expression: String, val result: String
+)
+
 @Composable
 fun CalculatorApp() {
+    val navController = rememberNavController()
+    var history by remember { mutableStateOf<List<HistoryItem>>(emptyList()) }
+    var maxHistoryList = 10
+
+    fun addToHistory(expression: String, result: String) {
+        val newHistoryItem = HistoryItem(expression, result)
+        history = if (history.size >= maxHistoryList) {
+            history.drop(1) + newHistoryItem
+        } else {
+            history + newHistoryItem
+        }
+    }
+
+    NavHost(navController = navController, startDestination = "calculator") {
+        composable("calculator") {
+            CalculatorScreen(navController, history, ::addToHistory)
+        }
+        composable("history") {
+            HistoryScreen(navController, history)
+        }
+    }
+}
+
+@Composable
+fun CalculatorScreen(navController: NavController, history: List<HistoryItem>, addToHistory: (String, String) -> Unit) {
     var input by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("") }
 
@@ -59,6 +94,22 @@ fun CalculatorApp() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+
+        Row(
+            modifier = Modifier.padding(12.dp).fillMaxWidth().offset(y = (-92).dp) ,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = "Calculator", fontSize = 36.sp, fontWeight = FontWeight.Bold)
+
+            Button(onClick = {
+                navController.navigate("history")
+            }) {
+                Text("History")
+            }
+
+        }
+
         Text(
             text = input.ifEmpty { "0" },
             fontSize = 48.sp,
@@ -105,6 +156,7 @@ fun CalculatorApp() {
                                    } catch (e: Exception) {
                                        "Error"
                                    }
+                                   addToHistory(input, result)
                                }
 
                                "\u232B" -> {
@@ -218,10 +270,58 @@ fun evaluatePostfix(postfix: List<String>): Double {
     return stack.last()
 }
 
-@Preview(showBackground = true)
 @Composable
-fun CalculatorAppPreview() {
-    CalculatorTheme {
-        CalculatorApp()
+fun HistoryScreen(navController: NavController, history: List<HistoryItem>) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp)
+            .padding(vertical = 48.dp),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "History",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            Button(onClick = { navController.navigate("calculator") }) {
+                Text(text = "Back")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (history.isNotEmpty()) {
+            LazyColumn {
+                items(history) { item ->
+                    HistoryItemRow(item)
+                }
+            }
+        } else {
+            Text(text = "History Masih Kosong", fontSize = 18.sp)
+        }
+    }
+}
+
+@Composable
+fun HistoryItemRow(item: HistoryItem) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(Color.LightGray)
+            .padding(12.dp)
+    ) {
+        Text(text = "${item.expression} = ${item.result}", fontSize = 18.sp)
     }
 }
