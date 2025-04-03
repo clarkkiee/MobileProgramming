@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +90,12 @@ fun CalculatorScreen(navController: NavController, history: List<HistoryItem>, a
     var input by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("") }
 
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(input) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -113,8 +122,10 @@ fun CalculatorScreen(navController: NavController, history: List<HistoryItem>, a
         Text(
             text = input.ifEmpty { "0" },
             fontSize = 48.sp,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.End
+            modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState),
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -123,7 +134,9 @@ fun CalculatorScreen(navController: NavController, history: List<HistoryItem>, a
             text = result.ifEmpty { "0" },
             fontSize = 32.sp,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.End
+            textAlign = TextAlign.End,
+            maxLines = 1,
+            overflow = TextOverflow.Clip,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
